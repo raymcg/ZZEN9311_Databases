@@ -1,0 +1,77 @@
+-- banking database
+
+CREATE TABLE Branch(
+	branchName	varchar(30)	PRIMARY KEY,
+	address		varchar(50)	NOT NULL,
+	assets		int		NOT NULL
+);
+
+CREATE TABLE Customer(
+	name		varchar(30)	NOT NULL,
+	address 	varchar(50)	NOT NULL,
+	customerNo	int		PRIMARY KEY,
+	homeBranch	varchar(30)	REFERENCES Branch(branchName)
+);
+
+
+CREATE TABLE Account(
+	branchname	varchar(30),
+	accountNo	char(5),
+	balance		decimal,
+	PRIMARY KEY (accountNo),
+	FOREIGN KEY (branchName) REFERENCES Branch(branchName)
+);
+
+CREATE TABLE Owner(
+	account		char(5),	
+	customer	int,
+	PRIMARY KEY (account, customer),
+	FOREIGN KEY (account) REFERENCES Account(accountNo),
+	FOREIGN KEY (customer) REFERENCES Customer(customerNo)
+);
+
+
+-- Insert values into Branch Table
+INSERT INTO Branch (branchname, address, assets) VALUES
+	('Clovelly','Clovelly Rd.',1000),
+ 	('Coogee','Coogee Bay Rd.',40000),
+ 	('Maroubra','Anzac Pde.',17000),
+ 	('Randwick','Alison Rd.',20000),
+ 	('UNSW','near Library',3000)
+;
+
+-- Insert values into Customer 
+INSERT INTO Customer(name, address, customerNo, homebranch) VALUES
+	('Adam','Belmore Rd.', 12345,'Randwick'),
+ 	('Bob','Rainbow St.', 32451,'Coogee'),
+ 	('Chuck','Clovelly Rd.', 76543,'Clovelly'),
+ 	('David','Anzac Pde.', 82199,'UNSW'),
+ 	('George','Anzac Pde.', 81244,'Maroubra'),
+ 	('Graham','Malabar Rd.', 92754,'Maroubra'),
+ 	('Greg','Coogee Bay Rd.',22735,'Coogee'),
+ 	('Jack','High St.', 12666,'Randwick')
+;
+
+INSERT INTO Account(branchName, accountNo, balance) VALUES
+	('UNSW','U-245',1000),
+	('UNSW','U-291',2000),
+	('Randwick','R-245',20000),
+	('Coogee','C-123',15000),
+	('Coogee','C-124',25000),
+	('Clovelly','Y-123',1000),
+	('Maroubra','M-222',5000),
+	('Maroubra','M-225',12000)
+;
+
+INSERT INTO Owner VALUES
+	('U-245',12345),
+	('U-291',12345),
+	('U-291',12666),
+	('R-245',12666),
+	('C-123',32451),
+	('C-124',22735),
+	('Y-123',76543),
+	('M-222',92754),
+	('M-225',12345)
+;
+

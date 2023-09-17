@@ -1,0 +1,199 @@
+-- ZZEN9311 Assignment 2b
+-- Schema for the mypics.net photo-sharing site
+--
+-- Written by Ray McGregor
+--
+-- Conventions:
+-- * all entity table names are plural
+-- * most entities have an artifical primary key called "id"
+-- * foreign keys are named after the relationship they represent
+
+-- Domains 
+
+create domain URLValue as
+	varchar(100) check (value like 'https://%');
+
+create domain EmailValue as
+	varchar(100) check (value like '%@%.%');
+
+create domain GenderValue as
+	varchar(6) check (value in ('male','female'));
+
+create domain GroupModeValue as
+	varchar(15) check (value in ('private','by-invitation','by-request'));
+
+create domain NameValue as varchar(50);
+
+create domain LongNameValue as varchar(100);
+
+-- Additional defined domains 
+
+create domain SafetyLevel as
+	varchar(10) check (value in ('safe','moderate','restricted'));
+
+create domain Visibility as
+	varchar(7) check (value in ('private','friends','family'));
+
+-- Tables 
+-- Tables Derived From Entities
+
+
+create table People(
+	id          	Serial,
+	family_name	NameValue	NOT NULL,
+	given_names	NameValue	NOT NULL,
+	displayed_name	NameValue	NOT NULL,
+	email_address	EmailValue,
+	PRIMARY KEY (id)
+	-- Given requirements specified for name being mandatory, family_name, given_names and displayed name have been made mandatory inputs
+);
+
+create table Users(
+	id		Int,
+	website		URLValue,
+	date_registered	Date		NOT NULL,
+	gender		GenderValue,
+	birthday	Date,
+	password	Text	NOT NULL,
+	portrait_id	Int, 
+	PRIMARY KEY (id),
+	FOREIGN KEY (id) REFERENCES People(id)
+	-- A trigger or something similar to meet the requirement of having as email a mandatory field in this table given it is not a mandatory field in the People table
+	-- We have NOT added a portrait id field to this table to keep the schema 'cleaner' given the overall relationship between Photos and Users 
+		-- and will portraits as other photos and assume the system can identify the portrait for a user via a combination of the 'owned_by' and 'title' or 'description' fields in the Photo table.  
+);
+
+create table Discussions(
+	id		Serial,
+	title		NameValue	NOT NULL,
+	PRIMARY KEY(id)
+);
+
+create table Photos(
+	id			Serial,
+	date_taken		Date	NOT NULL,
+	title			Text,
+	date_uploaded		Date	NOT NULL,
+	description		Text,
+	technical_details	Text,
+	safety_level		SafetyLevel	NOT NULL,
+	visbility		Visibility	NOT NULL,
+	file_size		Int	NOT NULL,
+	owned_by		Int	NOT NULL,
+	PRIMARY KEY (id),
+	FOREIGN KEY (owned_by) REFERENCES Users (id) 
+);
+
+create table Groups(
+	id		Serial,
+	owned_by	Int	NOT NULL,	
+	mode		GroupModeValue,	
+	title		Text,
+	discussion_id	Int,
+	PRIMARY KEY (id),
+	FOREIGN KEY (owned_by) REFERENCES Users(id),
+	FOREIGN KEY (discussion_id) REFERENCES Discussions(id)
+	-- Functionality required so that whoever creates a Group becomes its owner (owned_by) and automatically a member
+);
+
+create table Friends(
+	id		Serial,
+	title		Text	NOT NULL,
+	owned_by	Int	NOT NULL,
+	PRIMARY KEY (id),
+	FOREIGN KEY (owned_by) REFERENCES Users(id)
+);
+
+
+create table Collections(
+	id		Serial,
+	title		NameValue	NOT NULL,
+	description	Text,
+	key_photo	Int,
+	PRIMARY KEY (id),
+	FOREIGN KEY (key_photo) REFERENCES Photos(id)
+);
+
+create table User_Collections(
+	id		Int,
+	owned_by	Int	NOT NULL,
+	PRIMARY KEY(id),
+	FOREIGN KEY (id) REFERENCES Collections(id),
+	FOREIGN KEY (owned_by) REFERENCES Users(id)
+);
+
+create table Group_Collections(
+	id		Int,
+	owned_by	Int	NOT NULL,
+	PRIMARY KEY(id),
+	FOREIGN KEY (id) REFERENCES Collections(id),
+	FOREIGN KEY (owned_by) REFERENCES Groups(id)
+);
+
+create table Comments(
+	id			Serial,
+	content			Text		NOT NULL,
+	when_posted		Timestamp	NOT NULL,
+	discusion_contained_in	Int		NOT NULL,
+	authored_by		Int		NOT NULL,
+	PRIMARY KEY(id),
+	FOREIGN KEY (discusion_contained_in) REFERENCES Discussions(id),
+	FOREIGN KEY (authored_by) REFERENCES Users(id)
+);
+
+create table Tags(
+	id		Serial,
+	name		NameValue	NOT NULL,
+	freq		Int		CHECK(freq >=0),
+	PRIMARY KEY (id)
+);
+
+-- Tables Derived From Relationships
+
+create table Users_Membersof_Groups(
+	group_id	Int,
+	user_id		Int,
+	PRIMARY KEY (group_id, user_id),
+	FOREIGN KEY (group_id) REFERENCES Groups(id),
+	FOREIGN KEY (user_id) REFERENCES Users(id)
+);
+
+create table People_MembersOf_Friends(
+	person_id	Int,
+	friends_id	Int,
+	PRIMARY KEY (person_id, friends_id),
+	FOREIGN KEY (person_id) REFERENCES People(id), -- ensures all members must also be people
+	FOREIGN KEY (friends_id) REFERENCES Friends(id)
+	-- Functionality needs to added so that anytime a new unique friends_id is input, an entry is added to the Friends table
+);
+
+create table User_Rated_Photos(
+	user_id		Int,
+	photo_id	Int,
+	when_rated	Date		NOT NULL,
+	rating		Decimal(2,1)	NOT NULL CHECK(rating>=1 AND rating<=5),
+	discussion_id	Int,
+	PRIMARY KEY (user_id, photo_id),
+	FOREIGN KEY (user_id) REFERENCES Users(id),
+	FOREIGN KEY (photo_id) REFERENCES Photos(id),
+	FOREIGN KEY (discussion_id) REFERENCES Discussions(id)
+);
+
+create table Photos_With_Tags(
+	photo_id	Int,
+	tag_id		Int,
+	when_tagged	Timestamp	NOT NULL,
+	PRIMARY KEY (photo_id, tag_id),
+	FOREIGN KEY (photo_id) REFERENCES Photos(id),
+	FOREIGN KEY (tag_id)	REFERENCES Tags(id)
+);
+
+create table Photos_In_Collections(
+	photo_id	Int,
+	collection_id	Int,
+	order_id		Int	NOT NULL CHECK(order_id <100),
+	PRIMARY KEY (photo_id, collection_id),
+	FOREIGN KEY (photo_id) REFERENCES Photos(id),
+	FOREIGN KEY (collection_id) REFERENCES Collections(id)
+);
+

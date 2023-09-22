@@ -1,0 +1,29 @@
+QUESTION 1
+
+select title from movies where runtime > 300;
+
+QUESTION 2
+
+select genre, count(genre) from movie_genres 
+group by genre
+order by genre;
+
+QUESTION 3
+
+select title, rating, nvotes from movies
+order by rating desc, title asc
+limit 10;
+
+QUESTION 4
+
+create view most_regions as
+select movie_id as movie, count(region) as nregions from aliases 
+group by movie_id
+order by nregions desc
+limit 1;
+
+select movies.title as movie, most_regions.nregions 
+from movies join  most_regions on (movies.id = most_regions.movie);
+
+QUESTION 5
+

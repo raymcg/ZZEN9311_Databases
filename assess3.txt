@@ -53,3 +53,32 @@ group by person_id;
 select name from av_ratings join people on av_ratings.person_id = people.id
 where av_rating = (select max(av_rating) from av_ratings)
 order by name;
+
+QUESTION 6
+
+-- eliminate the documentary and biography genres
+create or replace view limited_genres as
+select * from movie_genres join movies on
+movies.id = movie_genres.movie_id
+where genre != 'documentary' and genre != 'biography';
+
+-- limit movies to those with at least 3 genres
+create or replace view multi_genres as
+select * from limited_genres where movie_id in (
+    select movie_id from limited_genres 
+    group by movie_id having count(movie_id) >= 3)
+    order by title, genre
+    ;
+
+-- add a column that contains the genres as comma seperated strings
+create or replace view genre_list as
+select movie_id, string_agg(genre, ',') as genres from multi_genres
+group by movie_id;
+
+-- add the movie title to get to the end result
+select title, genres from genre_list join movies on movies.id = genre_list.movie_id
+order by title;
+
+QUESTION 7
+
+

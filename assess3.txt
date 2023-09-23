@@ -81,4 +81,23 @@ order by title;
 
 QUESTION 7
 
+-- Build a list of exceptions
+create or replace view exceptions as
+select * from principals 
+where role = 'actor' and
+not exists (
+   select  
+   from   plays
+   where  plays.person_id = principals.person_id 
+   and plays.movie_id = principals.movie_id
+   )
+;
+
+-- add and rename required columns
+select name as actor, title as movie from exceptions
+join movies on exceptions.movie_id = movies.id
+join people on exceptions.person_id = people.id
+order by actor;
+
+
 

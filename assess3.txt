@@ -179,7 +179,7 @@ begin
 		from Movies join Principals on movies.id = principals.movie_id
         where role != 'producer' and
         title ilike '%'||partial_title||'%'
-        group by title
+        group by movies.id, title
         order by title
 	loop
 		return next _result.title || ' has '|| _result.staff || ' cast and crew';
@@ -193,4 +193,9 @@ end;
 
 $$ language plpgsql;
 
-select * from Q11('xyz');
+select * from Q11('nn');
+
+
+QUESTION 12
+
+

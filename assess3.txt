@@ -127,3 +127,25 @@ create or replace view exceptions as
 select title from movies natural join exceptions
 order by title;
 
+QUESTION 9
+
+-- combine principals and movies info
+create or replace view princ_details as
+select movies.rating, principals.* from principals
+join movies on principals.movie_id = movies.id
+where role = 'actor' or role = 'actress';
+
+-- calculate min rating and number of movies per principal
+-- only select those meeting min rating and min count criteria
+create or replace view principal_stats as
+select person_id, min(rating), count(movie_id) from princ_details
+group by person_id
+having count(movie_id) >= 3 and min(rating) >= 8.5;
+
+-- Add and select the actor/actress name
+select name from principal_stats 
+join people on people.id = principal_stats.person_id;
+
+
+QUESTION 10
+

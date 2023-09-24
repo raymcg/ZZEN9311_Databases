@@ -149,3 +149,48 @@ join people on people.id = principal_stats.person_id;
 
 QUESTION 10
 
+-- combine principals and movies info
+create or replace view princ_details as
+select movies.rating, principals.* from principals
+join movies on principals.movie_id = movies.id
+where role = 'actor' or role = 'actress';
+
+-- calculate min rating and number of movies per principal
+-- only select those meeting min rating and min count criteria
+create or replace view principal_stats as
+select person_id, min(rating), count(movie_id) from princ_details
+group by person_id
+having count(movie_id) >= 3 and min(rating) >= 8.5;
+
+-- Add and select the actor/actress name
+select name from principal_stats 
+join people on people.id = principal_stats.person_id;
+
+QUESTION 11
+
+create or replace function Q11(partial_title text) 
+returns SETOF text
+as $$
+declare
+    _result record;
+begin
+    for _result in
+		select title, count(role) as staff
+		from Movies join Principals on movies.id = principals.movie_id
+        where role != 'producer' and
+        title ilike '%'||partial_title||'%'
+        group by title
+        order by title
+	loop
+		return next _result.title || ' has '|| _result.staff || ' cast and crew';
+	end loop;
+
+    if(not found) then
+		return next 'No matching titles';
+	end if;    
+
+end;
+
+$$ language plpgsql;
+
+select * from Q11('xyz');

@@ -119,3 +119,11 @@ order by name;
 
 QUESTION 9
 
+-- find movies not in plays table
+create or replace view exceptions as
+(select id from movies) except (select movie_id from plays);
+
+-- add and select the movie title
+select title from movies natural join exceptions
+order by title;
+

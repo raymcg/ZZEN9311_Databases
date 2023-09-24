@@ -100,4 +100,22 @@ join people on exceptions.person_id = people.id
 order by actor;
 
 
+QUESTION 8
+
+--limit principals to actors
+create or replace view actors as
+select principals.*, movies.title, movies.year_made 
+from principals join movies on principals.movie_id = movies.id
+where principals.role = 'actor';
+
+-- add actor names and ages on date of movie
+create or replace view actor_ages as
+select actors.*, people.name, people.year_born, actors.year_made - people.year_born as age
+from actors join people on actors.person_id = people.id;
+
+select name, age from actor_ages where 
+age = (select min(age) from actor_ages)
+order by name;
+
+QUESTION 9
 

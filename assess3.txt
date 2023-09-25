@@ -198,4 +198,58 @@ select * from Q11('nn');
 
 QUESTION 12
 
+create or replace function Q12(partial_name text) 
+returns setof text
+as $$
+declare
+    --_first_row  text;
+    _person     people%rowtype;
+    _name       text;
+    _person_id  int;
+    _result     record;
+    _count      int;
+begin
+    
+    -- select name and check for null or ambiguous names
+    select count(name) into _count from People 
+    where name ilike '%'||partial_name||'%';
 
+    --if (not found) then
+    if _count < 1 then
+		return next 'No matching name';
+	elsif _count > 1 then
+        return next 'Ambiguous name';
+    elsif _count = 1 then
+        --select name, id into _name, _person_id
+        select * into _person
+        from People
+        where name ilike '%'||partial_name||'%';
+
+        if _person.year_born is null and _person.year_died is null then
+            return next _person.name || ' (-)';
+        elsif _person.year_died is null then
+            return next _person.name || ' (' || _person.year_born || '-' || ')';
+        else
+            return next _person.name || ' (' || _person.year_born || '-' || _person.year_died || ')';
+
+        end if;
+            
+    end if;
+
+    for _result in
+		select plays.character, movies.title, movies.year_made 
+        from plays join movies on plays.movie_id = movies.id
+        where plays.person_id = _person.id
+        order by movies.year_made, movies.title
+	loop
+		return next _result.title || ' (' || _result.year_made || ')' || ' as ' || _result.character;
+	end loop;
+end;
+
+$$ language plpgsql;
+
+select * from Q12('xxyyzz');
+select * from Q12('xyz');
+select * from Q12('smith');
+select * from Q12('clint eastwood');
+select * from Q12('marlon brando');

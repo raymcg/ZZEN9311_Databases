@@ -231,9 +231,12 @@ begin
             return next _person.name || ' (' || _person.year_born || '-' || ')';
         else
             return next _person.name || ' (' || _person.year_born || '-' || _person.year_died || ')';
-
         end if;
-            
+
+        if (select count(*) from plays where plays.person_id = _person.id) < 1 then
+        return next 'Has not acted';
+        end if;
+
     end if;
 
     for _result in
@@ -241,9 +244,11 @@ begin
         from plays join movies on plays.movie_id = movies.id
         where plays.person_id = _person.id
         order by movies.year_made, movies.title
+
 	loop
-		return next _result.title || ' (' || _result.year_made || ')' || ' as ' || _result.character;
-	end loop;
+        return next _result.title || ' (' || _result.year_made || ')' || ' as ' || _result.character;
+    end loop;
+
 end;
 
 $$ language plpgsql;
@@ -253,3 +258,4 @@ select * from Q12('xyz');
 select * from Q12('smith');
 select * from Q12('clint eastwood');
 select * from Q12('marlon brando');
+

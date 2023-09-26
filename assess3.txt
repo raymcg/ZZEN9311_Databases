@@ -202,10 +202,7 @@ create or replace function Q12(partial_name text)
 returns setof text
 as $$
 declare
-    --_first_row  text;
     _person     people%rowtype;
-    _name       text;
-    _person_id  int;
     _result     record;
     _count      int;
 begin
@@ -214,17 +211,17 @@ begin
     select count(name) into _count from People 
     where name ilike '%'||partial_name||'%';
 
-    --if (not found) then
     if _count < 1 then
 		return next 'No matching name';
 	elsif _count > 1 then
         return next 'Ambiguous name';
+    -- for rows with a single name run the required formatting
     elsif _count = 1 then
-        --select name, id into _name, _person_id
+        -- load the row into our _person variable for the row where the name matches the partial name
         select * into _person
         from People
         where name ilike '%'||partial_name||'%';
-
+        -- logic to deal with null values and return required details
         if _person.year_born is null and _person.year_died is null then
             return next _person.name || ' (-)';
         elsif _person.year_died is null then
@@ -232,21 +229,25 @@ begin
         else
             return next _person.name || ' (' || _person.year_born || '-' || _person.year_died || ')';
         end if;
-
+        -- logic to deal with person not having acted in any movies
         if (select count(*) from plays where plays.person_id = _person.id) < 1 then
-        return next 'Has not acted';
+            return next 'Has not acted';
         end if;
 
     end if;
 
     for _result in
-		select plays.character, movies.title, movies.year_made 
+        -- select movies title and year made as well characters played for each movie 
+        -- group by movie tile and year made so that movies don't repeat
+        -- where multiple characters are present for one movie, place into a list called characters
+        select string_agg(plays.character, ', ' order by plays.character) as characters, movies.title, movies.year_made
         from plays join movies on plays.movie_id = movies.id
         where plays.person_id = _person.id
+        group by movies.title, movies.year_made 
         order by movies.year_made, movies.title
-
 	loop
-        return next _result.title || ' (' || _result.year_made || ')' || ' as ' || _result.character;
+        -- for each row produced by our select query, return a string with required details
+        return next _result.title || ' (' || _result.year_made || ')' || ' as ' || _result.characters;
     end loop;
 
 end;
@@ -258,4 +259,6 @@ select * from Q12('xyz');
 select * from Q12('smith');
 select * from Q12('clint eastwood');
 select * from Q12('marlon brando');
+select * from Q12('Graham Chapman');
+select * from Q12('cem y');
 

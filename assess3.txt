@@ -240,7 +240,8 @@ begin
         -- select movies title and year made as well characters played for each movie 
         -- group by movie tile and year made so that movies don't repeat
         -- where multiple characters are present for one movie, place into a list called characters
-        select string_agg(plays.character, ', ' order by plays.character) as characters, movies.title, movies.year_made
+        -- replacing null values in plays.character with 'Actor' using the coalesce function
+        select string_agg(coalesce(plays.character,'Actor'), ', ' order by plays.character) as characters, movies.title, movies.year_made
         from plays join movies on plays.movie_id = movies.id
         where plays.person_id = _person.id
         group by movies.title, movies.year_made 
@@ -261,4 +262,6 @@ select * from Q12('clint eastwood');
 select * from Q12('marlon brando');
 select * from Q12('Graham Chapman');
 select * from Q12('cem y');
+
+
 
